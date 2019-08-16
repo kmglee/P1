@@ -1,0 +1,40 @@
+@isTest
+public class TransactionTriggerTest {
+    static testMethod void validateTransactionTrigger() {
+        Account__c acc = new Account__c(Amount__c = 875.25);
+        insert acc;
+        Budget__c bt = new Budget__c(Amount__c=800.00, Spent__c = 100.00);
+        insert bt;
+        Transaction__c ts = new Transaction__c(Account__c=acc.Id,Amount__c = 55.25, Budget__c=bt.Id);
+        insert ts;
+        
+        acc.Amount__c = acc.Amount__c - ts.Amount__c;
+        bt.Spent__c = bt.Spent__c + ts.Amount__c;
+        
+        System.assertEquals(820.00, acc.Amount__c);
+        System.assertEquals(155.25,bt.Spent__c);
+        update acc;
+        update bt;
+        //Test that the trigger correctly updated Account and budget
+        System.assertEquals(820.00, acc.Amount__c);
+        System.assertEquals(155.25, bt.Spent__c);
+        
+        try{
+            delete ts;           
+        }Catch (DMLException e){
+            System.debug('A DML exception has occurred: ' +
+                         e.getMessage());
+        }
+        acc.Amount__c = acc.Amount__c + ts.Amount__c;
+        bt.Spent__c = bt.Spent__c - ts.Amount__c;
+        
+        System.assertEquals(875.25, acc.Amount__c);
+        System.assertEquals(100.00,bt.Spent__c);
+        
+        update acc;
+        update bt;
+        
+        System.assertEquals(875.25, acc.Amount__c);
+        System.assertEquals(100.00,bt.Spent__c);
+    }
+}

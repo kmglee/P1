@@ -1,0 +1,57 @@
+trigger TransactionTrigger on Transaction__c (after insert, after delete) {
+    if (Trigger.isInsert){
+        if (Trigger.isAfter) 
+        {
+            Transaction__c t = Trigger.new[0];
+            System.debug(t);
+            Account__c a = [SELECT Id, Amount__C FROM Account__c WHERE Id =: t.Account__c];
+            Budget__c b = [SELECT Id, Spent__c FROM Budget__c WHERE Id =: t.Budget__c];
+            System.debug(a);
+            a.Amount__c = a.Amount__c - t.amount__c;
+            
+            b.Spent__c = b.Spent__c + t.Amount__c;
+            
+            update a;
+            update b;
+            
+            // bulk
+            List<Id> accountIds = new List<Id>();
+            
+            System.debug(Trigger.new);
+            for(Transaction__c myt : Trigger.new) {
+                accountIds.add(myt.Account__c);
+            }
+            System.debug(accountIds);
+            
+            //IDs From Account
+            List<Account__c> accs = [SELECT Id, Amount__c FROM Account__c WHERE ID IN : accountIds];
+            
+            for (Transaction__c myt : Trigger.new) {
+                for(Account__C ac : accs) {
+                    System.debug(ac);
+                    //Check Transaction ID = Account ID
+                    if (myt.Account__c == ac.Id) {
+                        // this account matches this transaction
+                        
+                    }
+                }
+            }
+        } 
+    } else if (Trigger.isDelete) {        
+        Transaction__c dt = Trigger.old[0]; 
+        System.debug(dt);
+        System.debug(dt.Budget__c);
+        Account__c ad = [SELECT Id, Amount__c FROM Account__c WHERE Id =: dt.Account__c]; 
+        Budget__c bd = [SELECT Id, Spent__c FROM Budget__c WHERE Id =: dt.Budget__c];
+        System.debug(bd);
+        ad.Amount__c = ad.Amount__c + dt.Amount__c;
+        
+        bd.Spent__c = bd.Spent__c - dt.Amount__c;
+        System.debug(ad.Amount__c);
+        
+        // Process after delete
+        
+        update ad;
+        update bd;
+    }      
+}
